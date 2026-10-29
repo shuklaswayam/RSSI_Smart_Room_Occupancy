@@ -1,0 +1,8 @@
+t_host,event_type,value,person_count,activity,position
+1700000000.0,run_start,,,,
+1700000000.0,state_start,Empty,0.0,none,none
+1700000030.0,state_start,Near,1.0,holding_device,near_r1
+1700000090.0,state_start,Far,1.0,holding_device,far_zone
+1700000150.0,state_start,Near,1.0,holding_device,near_r2
+1700000210.0,state_start,Empty,0.0,none,none
+1700000240.0,run_end,,,,

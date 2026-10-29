@@ -1,0 +1,40 @@
+name: drill
+description: Rapid door-crossing transition drills to capture boundary events
+steps:
+  - type: state
+    label: Empty
+    seconds: 30
+    person_count: 0
+    activity: none
+    position: none
+  - type: repeat
+    count: 5
+    steps:
+      - type: door_cross
+        direction: in
+      - type: state
+        label: Transition
+        seconds: 15
+        person_count: 1
+        activity: entering
+        position: doorway
+      - type: state
+        label: Occupied
+        seconds: 20
+        person_count: 1
+        activity: seated
+        position: desk
+      - type: door_cross
+        direction: out
+      - type: state
+        label: Transition
+        seconds: 15
+        person_count: 1
+        activity: exiting
+        position: doorway
+      - type: state
+        label: Empty
+        seconds: 20
+        person_count: 0
+        activity: none
+        position: none

@@ -1,0 +1,4 @@
+t_host,receiver_id,source_id,technology,channel,rssi_dbm,esp_ms
+1700000000.1,R1,TX1,ns2_wifi,6,-45,100
+1700000000.105,R2,TX1,ns2_wifi,6,-53,105
+1700000000.2,R1,TX1,ns2_wifi,6,-46,200

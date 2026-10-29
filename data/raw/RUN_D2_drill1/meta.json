@@ -1,0 +1,13 @@
+{
+  "run_id": "RUN_D2_drill1",
+  "day_id": "MOCK",
+  "date": "2026-10-12",
+  "mode": "collect",
+  "origin": "real",
+  "seed": 201,
+  "scenario_family": "drill",
+  "door_state": "closed",
+  "furniture_config": "F1",
+  "tx_device": "ESP32_Mock",
+  "notes": "Synthetic hardware run generated with drill"
+}

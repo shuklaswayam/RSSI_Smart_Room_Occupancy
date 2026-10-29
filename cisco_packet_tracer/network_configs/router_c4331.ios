@@ -1,0 +1,110 @@
+! ==============================================================================
+! Cisco ISR 4331 Router Configuration for RSSI Smart Room Occupancy System
+! ==============================================================================
+! Features:
+!   - Inter-VLAN Routing (Router-on-a-Stick via GigabitEthernet0/0/0)
+!   - Segmented DHCP Server Pools for IoT Devices, Workstations, and Edge Servers
+!   - Priority QoS Policy for 10 Hz RSSI Telemetry (UDP 5555 / MQTT 1883)
+!   - Access Control Lists (ACLs) enforcing strict IoT zero-trust isolation
+! ==============================================================================
+
+version 16.6
+no service pad
+service timestamps debug datetime msec
+service timestamps log datetime msec
+hostname RTR-GATEWAY-ROOM01
+
+! ------------------------------------------------------------------------------
+! Class-Maps and Policy-Map for 10 Hz Telemetry QoS (O10 Latency Budget)
+! ------------------------------------------------------------------------------
+ip access-list extended ACL-RSSI-TELEMETRY
+ permit udp 192.168.20.0 0.0.0.255 host 192.168.30.10 eq 5555
+ permit tcp 192.168.20.0 0.0.0.255 host 192.168.30.10 eq 1883
+!
+class-map match-all CM-RSSI-STREAM
+ match access-group name ACL-RSSI-TELEMETRY
+!
+policy-map PM-EDGE-QOS
+ class CM-RSSI-STREAM
+  set dscp ef
+  priority percent 30
+ class class-default
+  fair-queue
+!
+
+! ------------------------------------------------------------------------------
+! DHCP Pools for Auto-Provisioning
+! ------------------------------------------------------------------------------
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.20.1 192.168.20.20
+ip dhcp excluded-address 192.168.30.1 192.168.30.10
+ip dhcp excluded-address 192.168.99.1 192.168.99.10
+!
+ip dhcp pool POOL-DASHBOARD-VLAN10
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 1.1.1.1 8.8.8.8
+!
+ip dhcp pool POOL-IOT-SNIFFERS-VLAN20
+ network 192.168.20.0 255.255.255.0
+ default-router 192.168.20.1
+ option 156 ascii "broker=192.168.30.10;port=1883"
+!
+ip dhcp pool POOL-SERVERS-VLAN30
+ network 192.168.30.0 255.255.255.0
+ default-router 192.168.30.1
+!
+
+! ------------------------------------------------------------------------------
+! IoT Isolation ACL: Prevent Sniffers from Probing Corporate LAN (VLAN 10)
+! ------------------------------------------------------------------------------
+ip access-list extended ACL-IOT-ISOLATION
+ ! Allow communication to the Edge Inference Server / MQTT Broker
+ permit ip 192.168.20.0 0.0.0.255 host 192.168.30.10
+ ! Allow DNS & DHCP
+ permit udp any any eq bootps
+ permit udp any any eq domain
+ ! Deny access to Dashboard / Office LAN
+ deny ip 192.168.20.0 0.0.0.255 192.168.10.0 0.0.255
+ ! Permit outbound Internet access for NTP time synchronization
+ permit tcp 192.168.20.0 0.0.0.255 any eq 123
+ permit udp 192.168.20.0 0.0.0.255 any eq 123
+ deny ip any any
+!
+
+! ------------------------------------------------------------------------------
+! Physical Trunk Interface & Sub-Interfaces
+! ------------------------------------------------------------------------------
+interface GigabitEthernet0/0/0
+ description TRUNK-LINK-TO-SW-CORE
+ no ip address
+ service-policy output PM-EDGE-QOS
+ no shutdown
+!
+interface GigabitEthernet0/0/0.10
+ description GATEWAY-FOR-VLAN10-DASHBOARD
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+ no shutdown
+!
+interface GigabitEthernet0/0/0.20
+ description GATEWAY-FOR-VLAN20-IOT
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+ ip access-group ACL-IOT-ISOLATION in
+ no shutdown
+!
+interface GigabitEthernet0/0/0.30
+ description GATEWAY-FOR-VLAN30-EDGE-SERVERS
+ encapsulation dot1Q 30
+ ip address 192.168.30.1 255.255.255.0
+ no shutdown
+!
+interface GigabitEthernet0/0/0.99
+ description GATEWAY-FOR-VLAN99-MANAGEMENT
+ encapsulation dot1Q 99 native
+ ip address 192.168.99.1 255.255.255.0
+ no shutdown
+!
+
+end

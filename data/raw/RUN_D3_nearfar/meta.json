@@ -1,0 +1,13 @@
+{
+  "run_id": "RUN_D3_nearfar",
+  "day_id": "MOCK",
+  "date": "2026-10-12",
+  "mode": "collect",
+  "origin": "real",
+  "seed": 301,
+  "scenario_family": "nearfar",
+  "door_state": "closed",
+  "furniture_config": "F1",
+  "tx_device": "ESP32_Mock",
+  "notes": "Synthetic hardware run generated with nearfar"
+}

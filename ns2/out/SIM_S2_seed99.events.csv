@@ -1,0 +1,4 @@
+t_host,event_type,value,person_count,activity,position
+0.0,run_start,,,,
+0.0,state_start,Empty,0,none,none
+60.0,run_end,,,,

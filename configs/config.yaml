@@ -1,0 +1,111 @@
+paths:
+  raw_dir: data/raw
+  sim_dir: data/sim
+  processed_dir: data/processed
+  models_dir: models
+  db_path: db/occupancy.db
+  ns2_out: ns2/out
+  tables_dir: results/tables
+  figures_dir: results/figures
+sampling:
+  target_freq_hz: 10.0
+  tx_interval_s: 0.1024
+  median_k: 3
+  ema_alpha: 0.25
+  max_gap_slots: 5
+windowing:
+  window_s: 5.0
+  overlap: 0.5
+  step_s: 2.5
+  min_samples: 40
+room:
+  dimensions_m:
+  - 6.0
+  - 4.5
+  tx_pos:
+  - 0.3
+  - 0.3
+  r1_pos:
+  - 5.7
+  - 0.4
+  r2_pos:
+  - 3.0
+  - 4.2
+  door_pos:
+  - 0.2
+  - 2.25
+  seats:
+  - - 4.0
+    - 3.2
+  - - 2.2
+    - 1.2
+  - - 3.5
+    - 1.0
+calibration:
+  baseline_windows: 20
+  update_rate_gamma: 0.05
+  confidence_threshold: 0.9
+  min_empty_windows: 10
+  var_threshold_ratio: 1.5
+inference:
+  model_path: models/rf_primary.joblib
+  vote_window_size: 3
+  latency_budget_s: 2.0
+sim:
+  ns2_root: /opt/ns-allinone-2.35/ns-2.35
+  out_dir: data/sim
+  tx_interval_s: 0.1024
+  duration_s: 360
+  seeds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  quantize_dbm: true
+  channel:
+    freq_hz: 2.437e9
+    tx_power_w: 0.0018
+    rx_thresh_dbm: -90.0
+    cs_thresh_dbm: -91.0
+    pathloss_exp: 2.71
+    shadow_std_db: 1.4
+    dist0_m: 1.0
+  body:
+    loss_db: 6.18
+    extra_std_db: 2.19
+    fresnel_scale: 1.31
+    body_radius: 0.2
+simreal:
+  sim_weight:
+  - 0.1
+  - 0.3
+  - 1.0
+  n_real_sessions:
+  - 1
+  - 2
+  - 4
+  - 8
+  - 15
+netstudy:
+  rates_hz:
+  - 5
+  - 10
+  - 20
+  - 50
+  - 100
+  receivers:
+  - 2
+  - 3
+  - 5
+  - 8
+  extra_devices:
+  - 0
+  - 2
+  - 4
+  - 8

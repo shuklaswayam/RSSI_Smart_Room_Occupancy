@@ -1,0 +1,33 @@
+name: nearfar
+description: Distance bands around receivers for device-based proximity estimation
+steps:
+  - type: state
+    label: Empty
+    seconds: 30
+    person_count: 0
+    activity: none
+    position: none
+  - type: state
+    label: Near
+    seconds: 60
+    person_count: 1
+    activity: holding_device
+    position: near_r1
+  - type: state
+    label: Far
+    seconds: 60
+    person_count: 1
+    activity: holding_device
+    position: far_zone
+  - type: state
+    label: Near
+    seconds: 60
+    person_count: 1
+    activity: holding_device
+    position: near_r2
+  - type: state
+    label: Empty
+    seconds: 30
+    person_count: 0
+    activity: none
+    position: none

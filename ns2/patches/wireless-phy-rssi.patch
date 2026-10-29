@@ -1,0 +1,58 @@
+--- ns-2.35/mac/wireless-phy.h	2011-10-23 20:30:00.000000000 +0000
++++ ns-2.35-mod/mac/wireless-phy.h	2026-10-12 00:00:00.000000000 +0000
+@@ -102,6 +102,7 @@
+ 	void dump(void) const;
+ 	
+  protected:
++	int rssi_log_;
+ 	double Pt_;
+ 	double Pt_consume_;
+ 	double Pr_consume_;
+--- ns-2.35/mac/wireless-phy.cc	2011-10-23 20:30:00.000000000 +0000
++++ ns-2.35-mod/mac/wireless-phy.cc	2026-10-12 00:00:00.000000000 +0000
+@@ -51,6 +51,8 @@
+ #include <packet.h>
+ #include <wireless-phy.h>
+ 
++static FILE *rssi_fp = NULL;
++
+ static class WirelessPhyClass : public TclClass {
+ public:
+ 	WirelessPhyClass() : TclClass("Phy/WirelessPhy") {}
+@@ -62,6 +64,7 @@
+ WirelessPhy::WirelessPhy() : Phy()
+ {
+ 	bind("Pt_", &Pt_);
++	rssi_log_ = 0;
+ 	bind("Pt_consume_", &Pt_consume_);
+ 	bind("Pr_consume_", &Pr_consume_);
+ 	bind("P_idle_", &P_idle_);
+@@ -165,6 +168,13 @@
+ 		return TCL_OK;
+ 	}
++	if (argc == 3 && strcmp(argv[1], "rssi-log") == 0) {
++		rssi_log_ = 1;
++		if (!rssi_fp) rssi_fp = fopen(argv[2], "a");
++		return TCL_OK;
++	}
++	if (argc == 2 && strcmp(argv[1], "rssi-close") == 0) {
++		if (rssi_fp) { fclose(rssi_fp); rssi_fp = NULL; }
++		return TCL_OK;
++	}
+ 	return Phy::command(argc, argv);
+ }
+@@ -190,6 +200,14 @@
+ 		pkt_recvd = 1;
+ 	}
+ 
++	if (rssi_log_ && pkt_recvd && !p->error() && HDR_CMN(p)->ptype() == PT_CBR) {
++		if (rssi_fp) {
++			fprintf(rssi_fp, "%.6f %d %d %.3f\n", Scheduler::instance().clock(),
++			        node()->nodeid(), p->txinfo_.getNode()->nodeid(),
++			        10.0 * log10(Pr * 1000.0));
++			fflush(rssi_fp);
++		}
++	}
++
+ 	return pkt_recvd;
+ }

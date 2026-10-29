@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURA-RF • Liquid Glass Telemetry &amp; NS2 Testbed</title>
+  <meta name="description" content="AURA-RF Smart Room Occupancy Telemetry HUD with iOS 26 Liquid Glass Design, 2D Fresnel raytracing, dual-receiver RF oscilloscope, and 21-D feature matrix.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=liquid_glass_v4">
+</head>
+<body>
+  <!-- Ambient Liquid Glass Light Mesh (Illuminates from behind the frosted glass) -->
+  <div class="ambient-mesh" aria-hidden="true">
+    <div class="ambient-orb ambient-orb-1"></div>
+    <div class="ambient-orb ambient-orb-2"></div>
+    <div class="ambient-orb ambient-orb-3"></div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- HEADER & MISSION TELEMETRY BAR                                          -->
+  <!-- ======================================================================= -->
+  <header class="top-nav" role="banner">
+    <div class="brand">
+      <div class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="rf-icon" aria-hidden="true">
+          <circle cx="12" cy="12" r="2.5" fill="#38bdf8" />
+          <path d="M7.05 7.05a7 7 0 0 1 9.9 0M4.22 4.22a11 11 0 0 1 15.56 0M9.88 9.88a3 3 0 0 1 4.24 0" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.95" />
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="title-row">
+          <span class="brand-title">AURA-RF</span>
+          <span class="brand-tag">Occupancy Telemetry</span>
+          <span class="build-tag">NS2 Testbed v2.5</span>
+        </div>
+        <div class="brand-sub">Privacy-Preserving 802.11 RSSI Sensing &amp; Physical Diffraction</div>
+      </div>
+    </div>
+
+    <!-- Telemetry Status Pills -->
+    <div class="header-telemetry" role="status" aria-label="System status">
+      <div class="status-pill active-pill" id="system-status-pill">
+        <span class="pulsing-dot" aria-hidden="true"></span>
+        <span class="status-label">Armed (10 Hz)</span>
+      </div>
+      <div class="telemetry-pill">
+        <span class="pill-label">Latency</span>
+        <span class="pill-val mono" id="header-lat">8.4 ms</span>
+      </div>
+      <div class="telemetry-pill">
+        <span class="pill-label">Sensors</span>
+        <span class="pill-val mono">1 Tx • 2 Rx</span>
+      </div>
+      <div class="clock-pill mono" id="utc-clock">00:00:00.000 UTC</div>
+    </div>
+  </header>
+
+  <!-- ======================================================================= -->
+  <!-- SECONDARY ACTION BAR & REGIME TABS (Liquid Glass Segmented Controls)    -->
+  <!-- ======================================================================= -->
+  <nav class="sub-nav" aria-label="Dashboard views">
+    <div class="nav-tabs" role="tablist">
+      <button class="nav-tab active" data-tab="live" role="tab" id="tab-btn-live" aria-selected="true" aria-controls="tab-live">
+        <span class="tab-dot" aria-hidden="true"></span> Mission Control
+      </button>
+      <button class="nav-tab" data-tab="hero2" role="tab" id="tab-btn-hero2" aria-selected="false" aria-controls="tab-hero2">
+        <span class="tab-dot" aria-hidden="true"></span> NS2 Sim-to-Real
+      </button>
+      <button class="nav-tab" data-tab="hero3" role="tab" id="tab-btn-hero3" aria-selected="false" aria-controls="tab-hero3">
+        <span class="tab-dot" aria-hidden="true"></span> Adaptive Calibration
+      </button>
+      <button class="nav-tab" data-tab="specs" role="tab" id="tab-btn-specs" aria-selected="false" aria-controls="tab-specs">
+        <span class="tab-dot" aria-hidden="true"></span> 21-D Specifications
+      </button>
+    </div>
+
+    <div class="stream-controls">
+      <div class="mode-toggle-group" role="group" aria-label="Telemetry mode">
+        <button class="btn-toggle active" id="btn-mode-live">Live Hardware</button>
+        <button class="btn-toggle" id="btn-mode-physics">Physics Sim</button>
+        <button class="btn-toggle" id="btn-mode-replay">Replay</button>
+      </div>
+      <button class="btn-action" id="btn-pulse-burst" title="Inject a sample 5.0-second doorway traversal window">
+        <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M8 1v14M1 8h14"/></svg>
+        Inject 5.0s Window
+      </button>
+    </div>
+  </nav>
+
+  <!-- ======================================================================= -->
+  <!-- MAIN VIEWPORT CONTAINER                                                 -->
+  <!-- ======================================================================= -->
+  <main class="main-viewport">
+
+    <!-- ===================================================================== -->
+    <!-- TAB 1: LIVE RF MISSION CONTROL                                        -->
+    <!-- ===================================================================== -->
+    <section class="tab-panel active" id="tab-live" role="tabpanel" aria-labelledby="tab-btn-live">
+      
+      <!-- HERO METRICS STRIP (4 Specular Liquid Glass Cards) -->
+      <div class="kpi-grid">
+        <!-- KPI 1: Primary Occupancy Consensus -->
+        <div class="kpi-card hero-kpi" id="kpi-occupancy">
+          <div class="kpi-header">
+            <span class="kpi-title">Occupancy Consensus</span>
+            <span class="kpi-sub">W=5.0s • 10-Window Majority</span>
+          </div>
+          <div class="state-badge-row">
+            <div class="state-badge badge-empty" id="main-state-badge">
+              <span class="badge-icon" aria-hidden="true"></span>
+              <span class="badge-text" id="main-state-text">EMPTY</span>
+            </div>
+            <div class="stability-chip" id="vote-stability-chip">STABILITY: 10/10</div>
+          </div>
+          <!-- 10-window majority buffer tick line -->
+          <div class="vote-buffer-tracker">
+            <div class="buffer-label">Rolling Buffer:</div>
+            <div class="buffer-dots" id="vote-buffer-dots" aria-label="Rolling 10-vote buffer">
+              <span class="dot dot-empty"></span>
+              <span class="dot dot-empty"></span>
+              <span class="dot dot-empty"></span>
+              <span class="dot dot-empty"></span>
+              <span class="dot dot-empty"></span>
+              <span class="dot dot-empty"></span>
+              <span class="dot dot-empty"></span>
+              <span class="dot dot-empty"></span>
+              <span class="dot dot-empty"></span>
+              <span class="dot dot-empty"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 2: Random Forest Confidence Gauge -->
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Posterior Confidence</span>
+            <span class="kpi-sub">Random Forest Classifier</span>
+          </div>
+          <div class="gauge-metric-container">
+            <div class="radial-gauge-wrapper">
+              <svg class="radial-gauge" viewBox="0 0 100 100" aria-hidden="true">
+                <circle class="gauge-bg" cx="50" cy="50" r="42" />
+                <circle class="gauge-fg" id="gauge-confidence-circle" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="15" />
+              </svg>
+              <div class="gauge-val-inner">
+                <span class="gauge-number mono" id="kpi-conf-val">95.2</span><span class="gauge-pct">%</span>
+              </div>
+            </div>
+            <div class="conf-breakdown">
+              <div class="conf-bar-row">
+                <span class="bar-name">Empty</span>
+                <div class="bar-track"><div class="bar-fill fill-empty" id="prob-empty-bar" style="width: 95.2%;"></div></div>
+                <span class="bar-num mono" id="prob-empty-txt">95%</span>
+              </div>
+              <div class="conf-bar-row">
+                <span class="bar-name">Occupied</span>
+                <div class="bar-track"><div class="bar-fill fill-occupied" id="prob-occ-bar" style="width: 2.8%;"></div></div>
+                <span class="bar-num mono" id="prob-occ-txt">3%</span>
+              </div>
+              <div class="conf-bar-row">
+                <span class="bar-name">Transition</span>
+                <div class="bar-track"><div class="bar-fill fill-trans" id="prob-trans-bar" style="width: 2.0%;"></div></div>
+                <span class="bar-num mono" id="prob-trans-txt">2%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 3: Pipeline Processing Latency Budget -->
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Pipeline Latency</span>
+            <span class="kpi-sub">Budget Cap: ≤ 2,000 ms</span>
+          </div>
+          <div class="metric-big mono" id="kpi-latency-val">8.4 <span class="unit">ms</span></div>
+          <div class="budget-bar-wrapper">
+            <div class="budget-bar-track">
+              <div class="budget-bar-fill" id="latency-budget-fill" style="width: 0.42%;"></div>
+            </div>
+            <div class="budget-legend">
+              <span>Actual: <strong class="mono" id="budget-actual">8.4 ms</strong></span>
+              <span>Margin: <strong class="mono text-accent">99.6% Under Cap</strong></span>
+            </div>
+          </div>
+          <div class="kpi-footnote">
+            Median filter + 21-D Feature Extraction + RF Inference
+          </div>
+        </div>
+
+        <!-- KPI 4: Dual-Receiver Baseline Reference -->
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Adaptive Baseline</span>
+            <span class="kpi-sub">Dynamic Tracker (γ = 0.05)</span>
+          </div>
+          <div class="baseline-meters">
+            <div class="base-metric">
+              <span class="base-tag">Link R1 (Tx → Rx1)</span>
+              <div class="base-val mono" id="base-r1-val">-42.30 <span class="unit">dBm</span></div>
+              <div class="base-drift mono text-success" id="base-r1-drift">+0.00 dB drift</div>
+            </div>
+            <div class="base-metric">
+              <span class="base-tag">Link R2 (Tx → Rx2)</span>
+              <div class="base-val mono" id="base-r2-val">-45.10 <span class="unit">dBm</span></div>
+              <div class="base-drift mono text-success" id="base-r2-drift">+0.00 dB drift</div>
+            </div>
+          </div>
+          <div class="lock-indicator-row">
+            <span class="lock-pill pill-unlocked" id="calib-lock-badge">
+              <span class="lock-icon" aria-hidden="true">●</span> ADAPTIVE UPDATER: ACTIVE
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN WORKSPACE: LIVE SENSING FIELD & DUAL OSCILLOSCOPE & FEATURE TELEMETRY -->
+      <div class="workspace-grid">
+        
+        <!-- LEFT PANEL: Live Sensing Field & Room Raytracer -->
+        <div class="panel-box room-panel">
+          <div class="panel-header">
+            <div class="panel-header-title">
+              <span class="tag-accent">Figure 1</span>
+              <h3>2D Fresnel Diffraction &amp; Raytracer</h3>
+            </div>
+            <div class="panel-header-tools">
+              <span class="live-tag mono">60 FPS Physics</span>
+              <button class="btn-micro" id="btn-reset-pos" title="Reset human position to center">Reset</button>
+              <button class="btn-micro active" id="btn-toggle-autowalk" title="Toggle autonomous human trajectory">AUTO-WALK: ON</button>
+            </div>
+          </div>
+
+          <div class="canvas-wrapper">
+            <canvas id="room-canvas" width="680" height="360"></canvas>
+            <!-- Canvas Overlay HUD -->
+            <div class="canvas-hud">
+              <div class="hud-item mono">
+                <span class="hud-label">Position</span>
+                <span class="hud-val text-accent" id="hud-pos">(3.10 m, 3.25 m)</span>
+              </div>
+              <div class="hud-item mono">
+                <span class="hud-label">Offset</span>
+                <span class="hud-val" id="hud-dperp">d_R1: 0.24m • d_R2: 0.85m</span>
+              </div>
+              <div class="hud-item mono">
+                <span class="hud-label">Signal Loss</span>
+                <span class="hud-val text-danger" id="hud-loss">-5.82 dB attenuation</span>
+              </div>
+              <div class="hud-item mono">
+                <span class="hud-label">Fresnel Zone</span>
+                <span class="hud-val text-warning" id="hud-fresnel">FRESNEL OCCLUDED (CUT)</span>
+              </div>
+            </div>
+            <div class="canvas-instruction-pill">
+              <span>Drag the human target or use Auto-Walk to simulate body diffraction</span>
+            </div>
+          </div>
+
+          <div class="panel-footer-meta">
+            <div class="meta-item">
+              <span class="meta-key">Transmitter:</span>
+              <span class="meta-val mono">Tx @ (0.50m, 3.00m)</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-key">Receiver 1:</span>
+              <span class="meta-val mono">Rx1 @ (5.50m, 5.00m)</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-key">Receiver 2:</span>
+              <span class="meta-val mono">Rx2 @ (5.50m, 1.00m)</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-key">Carrier:</span>
+              <span class="meta-val mono">2.437 GHz (802.11 CH6)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL COLUMN: Phosphor Oscilloscope & Feature Matrix -->
+        <div class="panel-column-right">
+          
+          <!-- Phosphor Oscilloscope Card -->
+          <div class="panel-box oscilloscope-panel">
+            <div class="panel-header">
+              <div class="panel-header-title">
+                <span class="tag-accent">Figure 2</span>
+                <h3>Dual-Receiver RSSI Oscilloscope (10 Hz)</h3>
+              </div>
+              <div class="panel-header-tools">
+                <div class="trace-legend">
+                  <span class="legend-chip chip-r1"><span class="chip-color" aria-hidden="true"></span> Rx1 (Sniffer)</span>
+                  <span class="legend-chip chip-r2"><span class="chip-color" aria-hidden="true"></span> Rx2 (Sniffer)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="oscilloscope-wrapper">
+              <canvas id="scope-canvas" width="620" height="230"></canvas>
+            </div>
+
+            <div class="scope-controls">
+              <span class="scope-stat mono">Window: <strong>5.0 s (50 slots)</strong></span>
+              <span class="scope-stat mono">R1 Jitter: <strong class="text-accent" id="scope-r1-jitter">1.18 dB</strong></span>
+              <span class="scope-stat mono">R2 Jitter: <strong class="text-warning" id="scope-r2-jitter">1.34 dB</strong></span>
+              <span class="scope-stat mono">Filter: <strong>Median + EMA (α=0.25)</strong></span>
+            </div>
+          </div>
+
+          <!-- Feature Telemetry Panel -->
+          <div class="panel-box telemetry-features-panel">
+            <div class="panel-header">
+              <div class="panel-header-title">
+                <span class="tag-accent">Figure 3</span>
+                <h3>21-Dimensional Feature Matrix Telemetry</h3>
+              </div>
+              <div class="panel-header-tools">
+                <span class="feature-status mono text-accent">Normalized [-1.0, +1.0]</span>
+              </div>
+            </div>
+
+            <div class="features-scroll-grid" id="features-grid">
+              <!-- Dynamically populated feature chips -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- ===================================================================== -->
+    <!-- TAB 2: NS2 SIM-TO-REAL VALIDATION                                     -->
+    <!-- ===================================================================== -->
+    <section class="tab-panel tab-ns2-panel" id="tab-hero2" role="tabpanel" aria-labelledby="tab-btn-hero2">
+      <div class="ns2-frame-header">
+        <div class="ns2-header-left">
+          <div class="section-tag">Empirical Validation Suite • NS-2 Sim-to-Real</div>
+          <h2>NS-2 Sim-to-Real Calibration &amp; Transfer Learning Frame</h2>
+          <p>Validated empirical raytracing vs 802.11 physical sniffer captures ($W_1$ Wasserstein alignment &amp; cross-domain transfer).</p>
+        </div>
+        <div class="ns2-header-kpis">
+          <div class="ns2-kpi-pill">
+            <span class="ns2-kpi-lbl">Path Loss &beta;</span>
+            <span class="ns2-kpi-val mono text-accent">1.84</span>
+          </div>
+          <div class="ns2-kpi-pill">
+            <span class="ns2-kpi-lbl">Shadow &sigma;</span>
+            <span class="ns2-kpi-val mono text-pure">1.32 dB</span>
+          </div>
+          <div class="ns2-kpi-pill">
+            <span class="ns2-kpi-lbl">Body Atten L<sub>b</sub></span>
+            <span class="ns2-kpi-val mono text-warning">7.40 dB</span>
+          </div>
+          <div class="ns2-kpi-pill">
+            <span class="ns2-kpi-lbl">Mean &Delta;W<sub>1</sub></span>
+            <span class="ns2-kpi-val mono text-success font-bold">-74.5%</span>
+          </div>
+          <div class="ns2-kpi-pill">
+            <span class="ns2-kpi-lbl">Peak Transfer F<sub>1</sub></span>
+            <span class="ns2-kpi-val mono text-accent font-bold">0.777</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero2-grid ns2-compact-grid">
+        <!-- Distribution Distance Table & Visualizer -->
+        <div class="panel-box ns2-panel-compact">
+          <div class="panel-header ns2-subhead">
+            <div class="panel-header-title">
+              <h3>Distribution Fidelity Matrix (Kolmogorov-Smirnov &amp; Wasserstein Distance)</h3>
+            </div>
+            <span class="badge-scenario s-empty">Empirically Calibrated</span>
+          </div>
+          <div class="table-container ns2-table-container">
+            <table class="data-table ns2-table" id="table-fidelity">
+              <thead>
+                <tr>
+                  <th>Scenario</th>
+                  <th>Feature</th>
+                  <th>KS (Uncal)</th>
+                  <th>KS (Cal)</th>
+                  <th>W1 (Uncal)</th>
+                  <th>W1 (Cal)</th>
+                  <th>Fidelity Gain</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge-scenario s-empty">Empty (S1)</span></td>
+                  <td class="mono font-semibold">R1_mean</td>
+                  <td class="mono text-muted">0.421</td>
+                  <td class="mono text-success font-bold">0.118</td>
+                  <td class="mono text-muted">3.82 dB</td>
+                  <td class="mono text-accent font-bold">0.58 dB</td>
+                  <td><span class="delta-chip positive">-84.8% W1</span></td>
+                </tr>
+                <tr>
+                  <td><span class="badge-scenario s-empty">Empty (S1)</span></td>
+                  <td class="mono font-semibold">R2_mean</td>
+                  <td class="mono text-muted">0.478</td>
+                  <td class="mono text-success font-bold">0.136</td>
+                  <td class="mono text-muted">4.19 dB</td>
+                  <td class="mono text-accent font-bold">0.74 dB</td>
+                  <td><span class="delta-chip positive">-82.3% W1</span></td>
+                </tr>
+                <tr>
+                  <td><span class="badge-scenario s-occ">Occupied (S2)</span></td>
+                  <td class="mono font-semibold">R1_std</td>
+                  <td class="mono text-muted">0.652</td>
+                  <td class="mono text-success font-bold">0.219</td>
+                  <td class="mono text-muted">2.91 dB</td>
+                  <td class="mono text-accent font-bold">0.89 dB</td>
+                  <td><span class="delta-chip positive">-69.4% W1</span></td>
+                </tr>
+                <tr>
+                  <td><span class="badge-scenario s-occ">Occupied (S2)</span></td>
+                  <td class="mono font-semibold">R2_std</td>
+                  <td class="mono text-muted">0.609</td>
+                  <td class="mono text-success font-bold">0.194</td>
+                  <td class="mono text-muted">2.68 dB</td>
+                  <td class="mono text-accent font-bold">0.81 dB</td>
+                  <td><span class="delta-chip positive">-69.8% W1</span></td>
+                </tr>
+                <tr>
+                  <td><span class="badge-scenario s-trans">Transition (S3)</span></td>
+                  <td class="mono font-semibold">R1R2_mean_diff</td>
+                  <td class="mono text-muted">0.540</td>
+                  <td class="mono text-success font-bold">0.248</td>
+                  <td class="mono text-muted">3.12 dB</td>
+                  <td class="mono text-accent font-bold">1.06 dB</td>
+                  <td><span class="delta-chip positive">-66.0% W1</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="ns2-table-footer">
+            <span class="mono text-muted">Cross-Domain Alignment:</span>
+            <span class="mono text-success font-semibold">Average W<sub>1</sub> = 0.81 dB</span>
+            <span class="mono text-accent font-semibold">• 84.8% Max Reduction</span>
+            <span class="mono text-muted">• p &lt; 0.001 Significance</span>
+          </div>
+        </div>
+
+        <!-- Network Study & Transfer Learning Curves -->
+        <div class="panel-box ns2-panel-compact">
+          <div class="panel-header ns2-subhead">
+            <div class="panel-header-title">
+              <h3>Network Scaling &amp; Transfer Learning Regimes</h3>
+            </div>
+            <span class="live-tag mono">NS-2 Study</span>
+          </div>
+
+          <div class="dual-chart-row ns2-chart-row">
+            <!-- Canvas for Network Capacity -->
+            <div class="sub-chart-box ns2-sub-chart">
+              <div class="sub-chart-header">
+                <span class="sub-chart-title">Packet Delivery Rate vs Load</span>
+                <span class="sub-chart-meta mono">802.11 Sniffer Capacity</span>
+              </div>
+              <canvas id="chart-netstudy" width="340" height="135"></canvas>
+            </div>
+
+            <!-- Canvas for SimReal Curves -->
+            <div class="sub-chart-box ns2-sub-chart">
+              <div class="sub-chart-header">
+                <span class="sub-chart-title">Transfer Learning F1 vs Real Data</span>
+                <span class="sub-chart-meta mono">LOSO Cross-Validation</span>
+              </div>
+              <canvas id="chart-simreal" width="340" height="135"></canvas>
+            </div>
+          </div>
+
+          <div class="regime-legend-grid ns2-regime-grid">
+            <div class="regime-legend-item">
+              <span class="regime-color-box r-real" aria-hidden="true"></span>
+              <span class="regime-title">Real Only:</span>
+              <span class="regime-val mono">Baseline (0.755 F1)</span>
+            </div>
+            <div class="regime-legend-item">
+              <span class="regime-color-box r-pretrain" aria-hidden="true"></span>
+              <span class="regime-title">Pre-train + Tune:</span>
+              <span class="regime-val mono text-success font-bold">+11.7% at n=1</span>
+            </div>
+            <div class="regime-legend-item">
+              <span class="regime-color-box r-mixed" aria-hidden="true"></span>
+              <span class="regime-title">Mixed Sim+Real:</span>
+              <span class="regime-val mono text-accent font-bold">Peak (0.777 F1)</span>
+            </div>
+            <div class="regime-legend-item">
+              <span class="regime-color-box r-sim" aria-hidden="true"></span>
+              <span class="regime-title">Sim Only:</span>
+              <span class="regime-val mono">Zero Real Labels</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 3: ADAPTIVE CALIBRATION                                           -->
+    <!-- ===================================================================== -->
+    <section class="tab-panel" id="tab-hero3" role="tabpanel" aria-labelledby="tab-btn-hero3">
+      <div class="hero-section-header">
+        <div class="section-tag">Long-Term Reliability Suite</div>
+        <h2>Adaptive Baseline Calibration &amp; Anti-Poisoning Guardrails</h2>
+        <p>Continuous dynamic recalibration compensates for diurnal ambient temperature drift ($B(t) = (1-\gamma)B(t-1) + \gamma \mu$) while strict variance lockout gates prevent stationary occupants from falsely corrupting the empty room baseline.</p>
+      </div>
+
+      <div class="hero3-container">
+        <!-- Interactive Thermal / Environmental Drift Sandbox -->
+        <div class="panel-box">
+          <div class="panel-header">
+            <div class="panel-header-title">
+              <h3>Ambient Drift Simulation &amp; Anti-Poisoning Gate Test</h3>
+            </div>
+            <span class="tag-accent">Interactive Engine</span>
+          </div>
+
+          <div class="drift-sandbox-layout">
+            <div class="drift-controls-side">
+              <div class="control-group">
+                <label class="control-label" for="drift-slider">
+                  <span>Simulated Ambient Thermal Drift:</span>
+                  <span class="control-val mono" id="drift-slider-val">0.0 dB</span>
+                </label>
+                <input type="range" id="drift-slider" min="-6.0" max="6.0" step="0.2" value="0.0" class="styled-range" aria-label="Simulate ambient thermal drift">
+                <div class="range-labels mono">
+                  <span>-6.0 dB (Cold)</span>
+                  <span>0.0 dB (Nominal)</span>
+                  <span>+6.0 dB (Hot)</span>
+                </div>
+              </div>
+
+              <div class="control-group">
+                <span class="control-label">Stationary Occupant Poisoning Injection:</span>
+                <div class="button-toggle-row">
+                  <button class="btn-toggle active" id="btn-poison-off">Clear Room (Empty)</button>
+                  <button class="btn-toggle" id="btn-poison-on">Inject Still Occupant</button>
+                </div>
+              </div>
+
+              <div class="status-box-interactive" id="guard-status-box">
+                <div class="status-box-header">
+                  <span class="status-box-title">Anti-Poisoning Gate Status:</span>
+                  <span class="status-box-pill ok" id="guard-status-pill">GUARD: UNLOCKED</span>
+                </div>
+                <div class="status-box-desc" id="guard-status-desc">
+                  Variance within 1.5× bounds (σ = 1.18 dB). Baseline tracking allowed via EMA (γ = 0.05).
+                </div>
+              </div>
+            </div>
+
+            <div class="drift-visualizer-side">
+              <canvas id="drift-canvas" width="580" height="280"></canvas>
+              <div class="drift-canvas-legend mono">
+                <span><strong class="text-accent">—</strong> Current RSSI R(t)</span>
+                <span><strong class="text-success">—</strong> Adaptive Baseline B(t)</span>
+                <span><strong class="text-muted">···</strong> Initial Baseline B₀</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calibration Engine Guardrails Reference -->
+        <div class="guardrail-cards-grid">
+          <div class="guard-card">
+            <div class="guard-num">01</div>
+            <h4>Confirmed-Empty Gate</h4>
+            <p>Baseline updates execute exclusively when the 10-window rolling majority vote reports EMPTY with posterior confidence $\ge 90\%$.</p>
+          </div>
+          <div class="guard-card">
+            <div class="guard-num">02</div>
+            <h4>Variance Lockout Gate</h4>
+            <p>Freezes updates instantly if combined standard deviation exceeds $1.5\times \sigma_{\text{empty}}$, stopping stationary occupant absorption.</p>
+          </div>
+          <div class="guard-card">
+            <div class="guard-num">03</div>
+            <h4>Exponential Smoothing</h4>
+            <p>Applies exponential moving average ($\gamma = 0.05$) to gracefully track long-term thermal drifts without sudden jumps or over-compensation.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 4: SPECIFICATIONS                                                 -->
+    <!-- ===================================================================== -->
+    <section class="tab-panel" id="tab-specs" role="tabpanel" aria-labelledby="tab-btn-specs">
+      <div class="hero-section-header">
+        <div class="section-tag">Mathematical Foundations</div>
+        <h2>21-Dimensional Physical Feature Extraction Specifications</h2>
+        <p>Comprehensive mathematical formulations of the 12 single-receiver statistical and dynamic features alongside the 9 cross-link spatial differential metrics extracted on every 5.0-second sliding window.</p>
+      </div>
+
+      <div class="specs-grid">
+        <div class="spec-card">
+          <div class="spec-badge">Single-Receiver Features (12 Features: 6 per Receiver)</div>
+          <div class="spec-formula-row">
+            <span class="formula-name">1. Mean RSSI:</span>
+            <code class="formula-code">μ_i = (1/N) Σ RSSI_i[k]</code>
+          </div>
+          <div class="spec-formula-row">
+            <span class="formula-name">2. Standard Deviation:</span>
+            <code class="formula-code">σ_i = √((1/(N-1)) Σ (RSSI_i[k] - μ_i)²)</code>
+          </div>
+          <div class="spec-formula-row">
+            <span class="formula-name">3. Fisher Skewness:</span>
+            <code class="formula-code">γ_{1,i} = (1/N) Σ ((RSSI_i[k] - μ_i) / σ_i)³</code>
+          </div>
+          <div class="spec-formula-row">
+            <span class="formula-name">4. OLS Trajectory Slope:</span>
+            <code class="formula-code">β_i = Σ (t_k - t̄)(RSSI_i[k] - RSSĪ_i) / Σ (t_k - t̄)²</code>
+          </div>
+          <div class="spec-formula-row">
+            <span class="formula-name">5. Zero-Crossing Rate:</span>
+            <code class="formula-code">ZCR_i = (1 / 2(N-1)) Σ |sgn(x[k] - μ) - sgn(x[k-1] - μ)|</code>
+          </div>
+          <div class="spec-formula-row">
+            <span class="formula-name">6. Baseline Shift:</span>
+            <code class="formula-code">ΔB_i = μ_i - B_{0,i} (dB relative to calibrated baseline)</code>
+          </div>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-badge">Cross-Link Differentials (9 Spatial Multi-Path Features)</div>
+          <div class="spec-formula-row">
+            <span class="formula-name">13. Mean Differential:</span>
+            <code class="formula-code">Δμ = μ_{R1} - μ_{R2}</code>
+          </div>
+          <div class="spec-formula-row">
+            <span class="formula-name">14. Variance Ratio:</span>
+            <code class="formula-code">VR = σ²_{R1} / (σ²_{R2} + ε)</code>
+          </div>
+          <div class="spec-formula-row">
+            <span class="formula-name">15. Cross-Correlation:</span>
+            <code class="formula-code">ρ_{12} = Cov(RSSI_{R1}, RSSI_{R2}) / (σ_{R1} σ_{R2})</code>
+          </div>
+          <div class="spec-formula-row">
+            <span class="formula-name">16. Velocity Differential:</span>
+            <code class="formula-code">Δβ = β_{R1} - β_{R2}</code>
+          </div>
+          <div class="spec-formula-row">
+            <span class="formula-name">17-21. Dynamic Flux:</span>
+            <code class="formula-code">ΔZCR, ΔB_{12}, max(|R1 - R2|), Combined RMS, Energy Ratio</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================================= -->
+  <!-- BOTTOM STATUS DOCK (Liquid Glass Dock)                                  -->
+  <!-- ======================================================================= -->
+  <footer class="bottom-dock" role="contentinfo">
+    <div class="dock-left">
+      <span class="dock-tag">Session</span>
+      <span class="dock-val mono" id="dock-session-id">LIVE_STREAM_HOST</span>
+      <span class="dock-separator">•</span>
+      <span class="dock-tag">Database</span>
+      <span class="dock-val mono">SQLite db/occupancy.db</span>
+    </div>
+
+    <div class="dock-center">
+      <span class="dock-badge">Random Forest: models/rf_primary.joblib</span>
+      <span class="dock-badge text-success">LOSO: 91.4% Acc • 0.904 F1</span>
+    </div>
+
+    <div class="dock-right mono">
+      <span>10 Hz Telemetry</span>
+      <span class="dock-indicator-live">● Connected</span>
+    </div>
+  </footer>
+
+  <script src="app.js?v=liquid_glass_v4"></script>
+</body>
+</html>

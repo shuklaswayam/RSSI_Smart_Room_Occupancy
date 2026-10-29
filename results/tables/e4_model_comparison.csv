@@ -1,0 +1,6 @@
+model,accuracy,macro_precision,macro_recall,macro_f1,f1_empty,f1_occupied,f1_transition
+RandomForest,0.9143,0.9134,0.9,0.904,0.9596,0.9282,0.8241
+SVM_RBF,0.9101,0.9086,0.8955,0.8992,0.9621,0.9204,0.8152
+KNN,0.905,0.9061,0.888,0.8924,0.9611,0.916,0.8
+LogisticRegression,0.8983,0.8925,0.8849,0.8872,0.9527,0.913,0.796
+Threshold,0.7193,0.8433,0.653,0.5676,0.9426,0.7477,0.0126

@@ -1,0 +1,7 @@
+t_host,event_type,value,person_count,activity,position
+1700000000.0,state_start,empty_before,0,standing,99.0m
+1700000064.904,state_start,on_line,1,standing,0.0m
+1700000129.808,state_start,off_0.5m,1,standing,0.5m
+1700000194.712,state_start,off_1.0m,1,standing,1.0m
+1700000259.616,state_start,off_2.0m,1,standing,2.0m
+1700000324.52,state_start,empty_after,0,standing,99.0m

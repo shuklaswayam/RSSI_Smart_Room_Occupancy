@@ -1,0 +1,127 @@
+! ==============================================================================
+! Cisco Catalyst 2960 Switch Configuration for RSSI Smart Room Occupancy System
+! ==============================================================================
+! Roles:
+!   - VLAN 10: Workstation & Dashboard Clients (192.168.10.0/24)
+!   - VLAN 20: IoT Sniffers & Actuators (192.168.20.0/24)
+!   - VLAN 30: Edge Inference Servers & Telemetry Brokers (192.168.30.0/24)
+!   - VLAN 99: Dedicated Management Network (192.168.99.0/24)
+! ==============================================================================
+
+version 15.0
+no service pad
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+hostname SW-CORE-ROOM01
+
+! ------------------------------------------------------------------------------
+! VLAN Definitions
+! ------------------------------------------------------------------------------
+vlan 10
+ name WORKSTATIONS_DASHBOARD
+!
+vlan 20
+ name IOT_SNIFFERS_ACTUATORS
+!
+vlan 30
+ name EDGE_SERVERS_BROKER
+!
+vlan 99
+ name MANAGEMENT_NATIVE
+!
+
+! ------------------------------------------------------------------------------
+! Spanning Tree & Port Security Baseline
+! ------------------------------------------------------------------------------
+spanning-tree mode rapid-pvst
+spanning-tree portfast default
+spanning-tree portfast bpduguard default
+
+! ------------------------------------------------------------------------------
+! Trunk Link to Router (Cisco ISR 4331)
+! ------------------------------------------------------------------------------
+interface GigabitEthernet0/1
+ description TRUNK-TO-RTR-4331
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30,99
+ switchport mode trunk
+ no shutdown
+!
+
+! ------------------------------------------------------------------------------
+! Edge Server & MQTT Broker Port (VLAN 30)
+! ------------------------------------------------------------------------------
+interface FastEthernet0/1
+ description EDGE-INFERENCE-SERVER-OCC
+ switchport mode access
+ switchport access vlan 30
+ spanning-tree portfast
+ no shutdown
+!
+
+! ------------------------------------------------------------------------------
+! Wireless Access Point Trunk / Access (VLAN 20 for IoT SSIDs)
+! ------------------------------------------------------------------------------
+interface FastEthernet0/2
+ description AP-SMART-ROOM-WIFI
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+!
+
+! ------------------------------------------------------------------------------
+! Hardwired IoT Actuator / Sniffer Backup Ports (VLAN 20)
+! ------------------------------------------------------------------------------
+interface FastEthernet0/3
+ description SNIFFER-R1-BACKUP-ETH
+ switchport mode access
+ switchport access vlan 20
+ switchport port-security
+ switchport port-security maximum 1
+ switchport port-security violation restrict
+ spanning-tree portfast
+ no shutdown
+!
+interface FastEthernet0/4
+ description SNIFFER-R2-BACKUP-ETH
+ switchport mode access
+ switchport access vlan 20
+ switchport port-security
+ switchport port-security maximum 1
+ switchport port-security violation restrict
+ spanning-tree portfast
+ no shutdown
+!
+interface FastEthernet0/5
+ description ROOM-ACTUATOR-CONTROLLER
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+!
+
+! ------------------------------------------------------------------------------
+! User Workstation / Monitoring Dashboard (VLAN 10)
+! ------------------------------------------------------------------------------
+interface FastEthernet0/6
+ description OPERATOR-DASHBOARD-STATION
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ no shutdown
+!
+
+! ------------------------------------------------------------------------------
+! Switch Management SVI
+! ------------------------------------------------------------------------------
+interface Vlan99
+ description MANAGEMENT-SVI
+ ip address 192.168.99.2 255.255.255.0
+ no shutdown
+!
+ip default-gateway 192.168.99.1
+
+end

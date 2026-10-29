@@ -1,0 +1,10 @@
+t_host,event_type,value,person_count,activity,position
+1700000000.0,run_start,,,,
+1700000000.0,state_start,Empty,0,none,none
+1700000060.0,door_cross_in,,,,door
+1700000060.0,state_start,Occupied,1,seated,desk
+1700000150.0,door_cross_in,,,,door
+1700000150.0,state_start,Occupied,3,moving,room
+1700000270.0,door_cross_out,,,,door
+1700000270.0,state_start,Empty,0,none,none
+1700000360.0,run_end,,,,

@@ -1,0 +1,13 @@
+{
+  "run_id": "RUN_D1_state2",
+  "day_id": "MOCK",
+  "date": "2026-10-12",
+  "mode": "collect",
+  "origin": "real",
+  "seed": 102,
+  "scenario_family": "state_run",
+  "door_state": "closed",
+  "furniture_config": "F1",
+  "tx_device": "ESP32_Mock",
+  "notes": "Synthetic hardware run generated with state_run"
+}

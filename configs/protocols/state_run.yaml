@@ -1,0 +1,33 @@
+name: state_run
+description: Standard occupancy protocol transitioning between Empty, 1 person seated, and 3 people moving
+steps:
+  - type: state
+    label: Empty
+    seconds: 60
+    person_count: 0
+    activity: none
+    position: none
+  - type: door_cross
+    direction: in
+  - type: state
+    label: Occupied
+    seconds: 90
+    person_count: 1
+    activity: seated
+    position: desk
+  - type: door_cross
+    direction: in
+  - type: state
+    label: Occupied
+    seconds: 120
+    person_count: 3
+    activity: moving
+    position: room
+  - type: door_cross
+    direction: out
+  - type: state
+    label: Empty
+    seconds: 90
+    person_count: 0
+    activity: none
+    position: none
